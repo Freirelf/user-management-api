@@ -1,30 +1,34 @@
 import http from 'node:http'
 import url from 'node:url'
-import { createUser, getAllUsers, getUserById } from './controllers/userController';
+import { createUser, deleteUser, getAllUsers, getUserById, updateUser } from './controllers/userController.js';
 
 
 const server = http.createServer((req, res) => {
   const parsedUrl = url.parse(req.url, true);
   const path = parsedUrl.pathname;
   const method = req.method;
+  const id = parsedUrl.query.id;
 
   if (path === '/users' && method === 'GET') {
-    getAllUsers(req, res)
-  } else if ( path.match(/^\/users\/\d+$/) && method === 'GET') {
-    req.params = { id: path.split('/')[2]}
-    getUserById(req, res)
+    if (id) {
+      req.params = { id }; 
+      getUserById(req, res);
+    } else {
+      getAllUsers(req, res);
+    }
   } else if (path === '/users' && method === 'POST') {
-      createUser(req, res)
-  } else if ( path.match(/^\/users\/\d+$/) && method === 'PUT') {
-      req.params = { id: path.split('/')[2]}
-  } else if ( path.match(/^\/users\/\d+$/) && method === 'DELETE') {
-      req.params = { id: path.split('/')[2]}
+    createUser(req, res);
+  } else if (path === '/users' && method === 'PUT') {
+    req.params = { id };  
+    updateUser(req, res);
+  } else if (path === '/users' && method === 'DELETE') {
+    req.params = { id };  
+    deleteUser(req, res);
   } else {
-      res.writeHead(404, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: "Route not found"}))
+    res.writeHead(404, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ message: "Route not found" }));
   }
-
-})
+});
 
 const PORT = 3333;
 server.listen(PORT, () => {

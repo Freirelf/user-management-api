@@ -1,5 +1,5 @@
-import users from "../data/users.js";
-import sendJSONResponse from "../utils/response.js";
+import {users} from "../data/users.js";
+import {sendJSONResponse} from "../utils/response.js";
 
 // Listar todos os usuários
 export function getAllUsers(req, res) {
@@ -42,27 +42,39 @@ export function createUser(req, res) {
   })
 }
 
-// Atualizar usuário
-export function updateUser(req, res) {
-  const userId = parseInt(req.params.id);
+
+export const updateUser = (req, res) => {
+  const { id } = req.params;
+  const userIndex = users.findIndex(user => user.id === parseInt(id, 10));
+
+  if (userIndex === -1) {
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ message: "User not found" }));
+    return;
+  }
+
+  // Coletar dados enviados pelo cliente
   let body = '';
+
   req.on('data', chunk => {
-    body += chunk;
-  }).
+    body += chunk.toString();
+  });
+
   req.on('end', () => {
-    const { name, email } = JSON.parse(body);
-    const user = users.find(user => user.id === userId);
+    try {
+      const { name, email } = JSON.parse(body);
 
-    if(!user) {
-      sendJSONResponse(res, 404, { message: "User not found"});
+      // Atualizar o usuário com os dados recebidos
+      users[userIndex] = { ...users[userIndex], name, email };
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ message: "User updated successfully", user: users[userIndex] }));
+    } catch (error) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ message: "Invalid JSON data" }));
     }
-
-    user.name = name || user.name;
-    user.email = email || user.email
-
-    sendJSONResponse(res, 200, { message: "User updated", user})
-  })
-}
+  });
+};
 
 // Deletar usuário
 export function deleteUser(req, res) {
